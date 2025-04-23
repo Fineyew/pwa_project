@@ -4,40 +4,38 @@ import path from 'path'
 
 const router = express.Router()
 
-router.post('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', async (req: Request, res: Response): Promise<any> => {
   const { sessionId } = req.body
   console.log('[LOGOUT] Request received with sessionId:', sessionId)
 
   if (!sessionId) {
     console.warn('[LOGOUT] No sessionId provided.')
-    res.status(400).json({ success: false, message: 'Missing sessionId' })
-    return
+    return res.status(400).json({ success: false, message: 'Missing sessionId' })
   }
 
   const session = getSession(sessionId)
   if (!session) {
     console.warn('[LOGOUT] Session not found for:', sessionId)
-    res.status(404).json({ success: false, message: 'No session found' })
-    return
+    return res.status(200).json({ success: false, message: 'Session already expired or logged out.' })
   }
 
   try {
     const page = session.page
 
-    // 📸 Screenshot for debug
-    const screenshotPath = path.join(__dirname, `../../logout_debug_${sessionId}.png`)
-    await page.screenshot({ path: screenshotPath, fullPage: true })
-    console.log(`[LOGOUT] Screenshot saved to ${screenshotPath}`)
+// uncomment if you need debug for logout
+    // const screenshotPath = path.join(__dirname, `../../logout_debug_${sessionId}.png`)
+    // await page.screenshot({ path: screenshotPath, fullPage: true })
+    // console.log(`[LOGOUT] Screenshot saved to ${screenshotPath}`)
 
-    // ✅ Use visible text to reliably click Logout
     await page.getByText('Logout').click()
-
     await destroySession(sessionId)
+
     console.log('[LOGOUT] Successfully logged out and destroyed session')
-    res.json({ success: true })
+    return res.json({ success: true })
   } catch (err) {
     console.error('[LOGOUT ERROR]', err)
-    res.status(500).json({ success: false, message: 'Logout failed' })
+    await destroySession(sessionId)
+    return res.status(200).json({ success: false, message: 'Session expired. Forced logout.' })
   }
 })
 

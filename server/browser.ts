@@ -7,19 +7,23 @@ type Session = {
 
 const sessions = new Map<string, Session>()
 
-export const createSession = async (sessionId: string): Promise<{ page: Page; context: BrowserContext }> => {
-  const browser = await chromium.launch({ headless: true })
+export const createSession = async (): Promise<{ sessionId: string; page: Page; context: BrowserContext }> => {
+  const browser = await chromium.launch({
+    headless: true,
+    args: ['--disable-blink-features=AutomationControlled'],
+  })  
   const context = await browser.newContext()
   const page = await context.newPage()
+
+  const sessionId = Date.now().toString()
 
   // Store the browser in context metadata so we can close later
   ;(context as any)._browser = browser
 
-  return { page, context }
-}
+  // Save the session
+  sessions.set(sessionId, { context, page })
 
-export const setSession = (sessionId: string, session: Session) => {
-  sessions.set(sessionId, session)
+  return { sessionId, page, context }
 }
 
 export const getSession = (sessionId: string): Session | undefined => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 
 export default function Dashboard() {
@@ -9,18 +9,47 @@ export default function Dashboard() {
     if (!sessionId) return alert('No session ID found.')
 
     try {
-      await axios.post('http://localhost:4000/api/logout', { sessionId })
-      alert('Logged out successfully.')
+      const res = await axios.post('http://localhost:4000/api/logout', { sessionId })
       localStorage.removeItem('sessionId')
       window.location.reload()
     } catch {
-      alert('Logout failed.')
+      localStorage.removeItem('sessionId')
+      window.location.reload()
     }
   }
 
   const toggleDropdown = (tab: string) => {
     setOpenTab((prev) => (prev === tab ? null : tab))
   }
+
+  // ✅ Auto-logout after 5 mins of inactivity
+  useEffect(() => {
+    const IDLE_TIMEOUT = 5 * 60 * 1000
+    let idleTimer: ReturnType<typeof setTimeout>
+
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer)
+      idleTimer = setTimeout(() => {
+        alert('Session expired due to inactivity.')
+        localStorage.removeItem('sessionId')
+        window.location.reload()
+      }, IDLE_TIMEOUT)
+    }
+
+    const activityEvents = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+    activityEvents.forEach(event =>
+      window.addEventListener(event, resetIdleTimer)
+    )
+
+    resetIdleTimer()
+
+    return () => {
+      activityEvents.forEach(event =>
+        window.removeEventListener(event, resetIdleTimer)
+      )
+      clearTimeout(idleTimer)
+    }
+  }, [])
 
   return (
     <>

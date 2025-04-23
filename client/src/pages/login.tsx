@@ -7,7 +7,10 @@ export default function Login() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+    if (!username || !password) return
+
     setLoading(true)
     setError('')
 
@@ -17,49 +20,67 @@ export default function Login() {
         password
       })
 
-      // ✅ Save sessionId to localStorage so we can use it in Dashboard
-      localStorage.setItem('sessionId', res.data.sessionId)
+      if (res.data.success) {
+        localStorage.setItem('sessionId', res.data.sessionId)
 
-      alert('Login successful. Session ID: ' + res.data.sessionId)
-      window.location.reload() // refresh to load Dashboard
+        if (import.meta.env.DEV) {
+          console.log('[LOGIN SUCCESS]', `Session ID: ${res.data.sessionId}`)
+        }
+
+        window.location.reload()
+      } else {
+        setError('Login failed. Please check credentials.')
+      }
     } catch (err) {
-      setError('Login failed.')
+      setError('Login failed. Please check credentials or try again.')
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="login-form">
+    <form
+      onSubmit={handleLogin}
+      className="login-form"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        maxWidth: 300,
+        margin: '100px auto',
+        gap: '0.75rem'
+      }}
+    >
       <h1 style={{ textAlign: 'center' }}>Login</h1>
+
       <input
         placeholder="Username"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
-        style={{ width: '100%', padding: 8, marginBottom: 12 }}
+        style={{ padding: 8 }}
       />
       <input
         placeholder="Password"
         type="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        style={{ width: '100%', padding: 8, marginBottom: 12 }}
+        style={{ padding: 8 }}
       />
+
       <button
-        onClick={handleLogin}
+        type="submit"
         disabled={loading}
         style={{
-          width: '100%',
           padding: 10,
           background: '#0277bd',
           color: 'white',
           border: 'none',
-          cursor: 'pointer',
+          cursor: 'pointer'
         }}
       >
         {loading ? 'Logging in...' : 'Login'}
       </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-    </div>
-  )  
+
+      {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
+    </form>
+  )
 }
