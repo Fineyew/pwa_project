@@ -1,25 +1,39 @@
-import { chromium, Browser, Page } from 'playwright'
+import { chromium, Browser, BrowserContext, Page } from 'playwright'
 
 type Session = {
-  browser: Browser
+  context: BrowserContext
   page: Page
 }
 
-const sessions: Record<string, Session> = {}
+const sessions = new Map<string, Session>()
 
-export const createSession = async (sessionId: string) => {
+export const createSession = async (sessionId: string): Promise<{ page: Page; context: BrowserContext }> => {
   const browser = await chromium.launch({ headless: true })
-  const page = await browser.newPage()
-  sessions[sessionId] = { browser, page }
-  return sessions[sessionId]
+  const context = await browser.newContext()
+  const page = await context.newPage()
+
+  // Store the browser in context metadata so we can close later
+  ;(context as any)._browser = browser
+
+  return { page, context }
 }
 
-export const getSession = (id: string) => sessions[id]
+export const setSession = (sessionId: string, session: Session) => {
+  sessions.set(sessionId, session)
+}
 
-export const destroySession = async (id: string) => {
-  const session = sessions[id]
+export const getSession = (sessionId: string): Session | undefined => {
+  return sessions.get(sessionId)
+}
+
+export const destroySession = async (sessionId: string) => {
+  const session = sessions.get(sessionId)
   if (session) {
-    await session.browser.close()
-    delete sessions[id]
+    await session.context.close()
+
+    const browser = (session.context as any)._browser as Browser
+    if (browser) await browser.close()
+
+    sessions.delete(sessionId)
   }
 }

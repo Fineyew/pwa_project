@@ -1,5 +1,5 @@
 import express from 'express'
-import { createSession } from '../browser'
+import { createSession, setSession } from '../browser'
 
 const router = express.Router()
 
@@ -8,27 +8,25 @@ router.post('/', async (req, res) => {
   const sessionId = Date.now().toString()
 
   try {
-    const { page } = await createSession(sessionId)
+    const { page, context } = await createSession(sessionId)
 
     await page.goto('https://ews.mip.com/ews/', { waitUntil: 'networkidle' })
 
-    // Adjust these selectors if needed based on the login page
     await page.waitForSelector('#Login_UserName', { timeout: 10000 })
     await page.fill('#Login_UserName', username)
     await page.fill('#Login_Password', password)
     await page.click('#Login_LoginButton')
 
-
     await page.waitForTimeout(2000)
 
-    // Take a screenshot of the page after login attempt
-    await page.screenshot({
-      path: `login_attempt_${sessionId}.png`,
-      fullPage: true
+    // ✅ Save session so it can be used for logout
+    setSession(sessionId, {
+      context,
+      page
     })
 
     const url = page.url()
-    const loginSuccess = !url.includes('login') // Adjust if URL doesn’t change on login
+    const loginSuccess = !url.includes('login')
 
     if (!loginSuccess) throw new Error('Login failed')
 
