@@ -13,9 +13,11 @@ router.post('/', async (req, res) => {
     await page.goto('https://ews.mip.com/ews/', { waitUntil: 'networkidle' })
 
     // Adjust these selectors if needed based on the login page
-    await page.fill('input[name="username"]', username)
-    await page.fill('input[name="password"]', password)
-    await page.click('button[type="submit"]')
+    await page.waitForSelector('#Login_UserName', { timeout: 10000 })
+    await page.fill('#Login_UserName', username)
+    await page.fill('#Login_Password', password)
+    await page.click('#Login_LoginButton')
+
 
     await page.waitForTimeout(2000)
 
