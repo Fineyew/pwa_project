@@ -1,8 +1,19 @@
 import axios from 'axios'
 
-const api = axios.create({
-  baseURL: 'https://448b-67-231-174-252.ngrok-free.app',
-})
+let baseURL = ''
 
-export const login = (username: string, password: string) =>
-  api.post('/login', { username, password })
+const configPromise = fetch('/config.json')
+  .then((res) => res.json())
+  .then((config) => {
+    baseURL = config.apiBaseUrl
+  })
+
+export const login = async (username: string, password: string) => {
+  await configPromise
+  return axios.post(`${baseURL}/api/login`, { username, password })
+}
+
+export const logout = async (sessionId: string) => {
+  await configPromise
+  return axios.post(`${baseURL}/api/logout`, { sessionId })
+}
