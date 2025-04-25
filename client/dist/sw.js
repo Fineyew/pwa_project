@@ -1,1 +1,0 @@
-"use strict";(()=>{var e=self;e.addEventListener("install",()=>{console.log("[SW] Installed"),e.skipWaiting()});e.addEventListener("activate",()=>{console.log("[SW] Activated"),e.clients.claim()});e.addEventListener("fetch",()=>{});})();
